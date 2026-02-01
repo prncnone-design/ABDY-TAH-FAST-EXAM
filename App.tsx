@@ -15,6 +15,7 @@ const App: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [history, setHistory] = useState<Exam[]>([]);
   const [apiKeyMissing, setApiKeyMissing] = useState(false);
+  const [manualKey, setManualKey] = useState('');
 
   const isLoading = loadingStatus !== 'idle';
 
@@ -47,6 +48,13 @@ const App: React.FC = () => {
   useEffect(() => {
     localStorage.setItem('exam_history', JSON.stringify(history));
   }, [history]);
+
+  const handleSaveKey = () => {
+    if (manualKey.trim()) {
+      localStorage.setItem('gemini_api_key', manualKey.trim());
+      window.location.reload();
+    }
+  };
 
   const handleProcessInput = async (text: string) => {
     setLoadingStatus('parsing');
@@ -118,9 +126,38 @@ const App: React.FC = () => {
       
       {/* Warning Banner for Vercel/Static Deployments */}
       {apiKeyMissing && (
-        <div className="w-full bg-amber-50 border-b border-amber-200 p-3 text-center text-sm text-amber-900 flex items-center justify-center gap-2">
-           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
-           <span>Setup Required: Add <strong>?key=YOUR_GEMINI_KEY</strong> to the URL to activate the AI engine.</span>
+        <div className="w-full bg-slate-900 border-b border-slate-800 p-4 text-center text-sm text-white shadow-lg z-50 flex flex-col md:flex-row items-center justify-center gap-4 animate-in slide-in-from-top duration-300">
+           <div className="flex items-center gap-2 text-yellow-400 font-bold shrink-0">
+             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+             <span>AI Setup Required</span>
+           </div>
+           
+           <div className="flex items-center gap-2 w-full max-w-lg">
+             <input 
+               type="password" 
+               placeholder="Paste Gemini API Key here..."
+               value={manualKey}
+               onChange={(e) => setManualKey(e.target.value)}
+               className="flex-1 bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-red-500 transition-all"
+               onKeyDown={(e) => e.key === 'Enter' && handleSaveKey()}
+             />
+             <button 
+               onClick={handleSaveKey}
+               disabled={!manualKey.trim()}
+               className="bg-red-600 hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed text-white px-4 py-2 rounded-lg font-bold transition-colors"
+             >
+               Save
+             </button>
+           </div>
+
+           <a 
+             href="https://aistudio.google.com/app/apikey" 
+             target="_blank" 
+             rel="noopener noreferrer"
+             className="text-xs text-slate-400 hover:text-white underline decoration-slate-600 hover:decoration-white transition-all shrink-0"
+           >
+             Get Free API Key &rarr;
+           </a>
         </div>
       )}
 
