@@ -2,36 +2,47 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { Exam, QuestionType, GradingResult } from "./types";
 
-// Safely retrieve API Key to prevent 'process is not defined' errors on mobile/static builds
+// Safely retrieve API Key with priority: URL Param > LocalStorage > Process.env
 const getApiKey = (): string => {
-  let key = "";
+  if (typeof window === "undefined") return "";
+
+  // 1. Check URL Parameters (allows instant setup on Vercel: domain.com/?key=AIza...)
+  const urlParams = new URLSearchParams(window.location.search);
+  const urlKey = urlParams.get('key') || urlParams.get('apiKey');
+  if (urlKey) {
+    localStorage.setItem("gemini_api_key", urlKey);
+    return urlKey;
+  }
+
+  // 2. Check LocalStorage (persistent mobile/browser)
+  const localKey = localStorage.getItem("gemini_api_key");
+  if (localKey) return localKey;
+
+  // 3. Check Environment Variable (Dev/Build)
   try {
-    // Check environment variable (standard way)
-    if (typeof process !== "undefined" && process.env && process.env.API_KEY) {
-      key = process.env.API_KEY;
+    // @ts-ignore
+    if (window.process && window.process.env && window.process.env.API_KEY) {
+      // @ts-ignore
+      return window.process.env.API_KEY;
     }
   } catch (e) {
     console.warn("Error accessing process.env", e);
   }
 
-  // Fallback: Check localStorage. This allows users to manually set the key 
-  // on mobile devices using console: localStorage.setItem('gemini_api_key', 'YOUR_KEY')
-  if (!key && typeof localStorage !== "undefined") {
-    const localKey = localStorage.getItem("gemini_api_key");
-    if (localKey) key = localKey;
-  }
-
-  return key || "";
+  return "";
 };
 
 const API_KEY = getApiKey();
 
 export const parseExamFromText = async (text: string): Promise<Exam> => {
-  if (!API_KEY) {
-    throw new Error("API Key is missing. If you are running this locally/offline, please set 'gemini_api_key' in localStorage.");
+  // Re-check key at runtime in case it was added via console or storage update
+  const currentKey = getApiKey();
+  
+  if (!currentKey) {
+    throw new Error("API Key Missing. Add '?key=YOUR_API_KEY' to the URL or set 'gemini_api_key' in LocalStorage.");
   }
 
-  const ai = new GoogleGenAI({ apiKey: API_KEY });
+  const ai = new GoogleGenAI({ apiKey: currentKey });
   const response = await ai.models.generateContent({
     model: 'gemini-3-pro-preview',
     contents: `Transform the following unstructured text into a structured exam JSON. 
@@ -111,11 +122,12 @@ export const parseExamFromText = async (text: string): Promise<Exam> => {
 };
 
 export const gradeExam = async (exam: Exam, answers: Record<string, string>): Promise<GradingResult> => {
-  if (!API_KEY) {
-    throw new Error("API Key is missing. If you are running this locally/offline, please set 'gemini_api_key' in localStorage.");
+  const currentKey = getApiKey();
+  if (!currentKey) {
+    throw new Error("API Key Missing. Add '?key=YOUR_API_KEY' to the URL or set 'gemini_api_key' in LocalStorage.");
   }
 
-  const ai = new GoogleGenAI({ apiKey: API_KEY });
+  const ai = new GoogleGenAI({ apiKey: currentKey });
   
   // LOGIC: Determine if Thinking Mode is relevant.
   // Subjective questions (WORKOUT) and fuzzy matching (FILL_BLANK) benefit from deep reasoning (32k tokens).
