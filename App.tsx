@@ -5,7 +5,7 @@ import InputSection from './components/InputSection';
 import ExamView from './components/ExamView';
 import ResultsOverlay from './components/ResultsOverlay';
 import { Exam, GradingResult } from './types';
-import { parseExamFromText, gradeExam } from './geminiService';
+import { parseExamFromText, gradeExam, checkApiKey } from './geminiService';
 
 const App: React.FC = () => {
   // Loading state: idle | parsing | grading
@@ -21,15 +21,8 @@ const App: React.FC = () => {
 
   // Check for API Key on mount
   useEffect(() => {
-    const hasKey = 
-      (typeof window !== 'undefined' && (
-        localStorage.getItem("gemini_api_key") || 
-        new URLSearchParams(window.location.search).get('key') ||
-        // @ts-ignore
-        (window.process?.env?.API_KEY)
-      ));
-    
-    setApiKeyMissing(!hasKey);
+    // We utilize the helper from geminiService to check all possible sources (Hardcoded, LocalStorage, URL, Env)
+    setApiKeyMissing(!checkApiKey());
 
     // Load history
     const saved = localStorage.getItem('exam_history');

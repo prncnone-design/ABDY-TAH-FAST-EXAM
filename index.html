@@ -44,6 +44,7 @@
     <!-- Polyfill for process.env to prevent crashes in non-Node environments (like mobile/static downloads) -->
     <script>
       window.process = window.process || { env: {} };
+      window.process.env.API_KEY = 'gen-lang-client-0981089503';
     </script>
 <script type="importmap">
 {

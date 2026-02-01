@@ -1,48 +1,20 @@
-
 import { GoogleGenAI, Type } from "@google/genai";
 import { Exam, QuestionType, GradingResult } from "./types";
 
-// Safely retrieve API Key with priority: URL Param > LocalStorage > Process.env
-const getApiKey = (): string => {
-  if (typeof window === "undefined") return "";
+// The API key must be obtained exclusively from the environment variable process.env.API_KEY.
+// Assume this variable is pre-configured, valid, and accessible.
 
-  // 1. Check URL Parameters (allows instant setup on Vercel: domain.com/?key=AIza...)
-  const urlParams = new URLSearchParams(window.location.search);
-  const urlKey = urlParams.get('key') || urlParams.get('apiKey');
-  if (urlKey) {
-    localStorage.setItem("gemini_api_key", urlKey);
-    return urlKey;
-  }
-
-  // 2. Check LocalStorage (persistent mobile/browser)
-  const localKey = localStorage.getItem("gemini_api_key");
-  if (localKey) return localKey;
-
-  // 3. Check Environment Variable (Dev/Build)
-  try {
-    // @ts-ignore
-    if (window.process && window.process.env && window.process.env.API_KEY) {
-      // @ts-ignore
-      return window.process.env.API_KEY;
-    }
-  } catch (e) {
-    console.warn("Error accessing process.env", e);
-  }
-
-  return "";
+export const checkApiKey = (): boolean => {
+  return !!process.env.API_KEY;
 };
 
-const API_KEY = getApiKey();
-
 export const parseExamFromText = async (text: string): Promise<Exam> => {
-  // Re-check key at runtime in case it was added via console or storage update
-  const currentKey = getApiKey();
-  
-  if (!currentKey) {
-    throw new Error("API Key not found. Please enter it in the banner at the top of the page.");
+  const apiKey = process.env.API_KEY;
+  if (!apiKey) {
+    throw new Error("API Key not found. Please set the API_KEY environment variable.");
   }
 
-  const ai = new GoogleGenAI({ apiKey: currentKey });
+  const ai = new GoogleGenAI({ apiKey });
   const response = await ai.models.generateContent({
     model: 'gemini-3-pro-preview',
     contents: `Transform the following unstructured text into a structured exam JSON. 
@@ -106,7 +78,7 @@ export const parseExamFromText = async (text: string): Promise<Exam> => {
   });
 
   try {
-    const jsonStr = response.text.trim().replace(/^```json\n?|\n?```$/g, '');
+    const jsonStr = response.text?.trim().replace(/^```json\n?|\n?```$/g, '') || "{}";
     const parsed = JSON.parse(jsonStr);
     
     // Inject ID and Timestamp manually as the LLM doesn't generate them for the container
@@ -122,12 +94,11 @@ export const parseExamFromText = async (text: string): Promise<Exam> => {
 };
 
 export const gradeExam = async (exam: Exam, answers: Record<string, string>): Promise<GradingResult> => {
-  const currentKey = getApiKey();
-  if (!currentKey) {
-    throw new Error("API Key not found. Please enter it in the banner at the top of the page.");
+  if (!process.env.API_KEY) {
+    throw new Error("API Key not found. Please set the API_KEY environment variable.");
   }
 
-  const ai = new GoogleGenAI({ apiKey: currentKey });
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   
   // LOGIC: Determine if Thinking Mode is relevant.
   // Subjective questions (WORKOUT) and fuzzy matching (FILL_BLANK) benefit from deep reasoning (32k tokens).
@@ -189,7 +160,7 @@ Grading Instructions:
   });
 
   try {
-    const jsonStr = response.text.trim().replace(/^```json\n?|\n?```$/g, '');
+    const jsonStr = response.text?.trim().replace(/^```json\n?|\n?```$/g, '') || "{}";
     return JSON.parse(jsonStr) as GradingResult;
   } catch (e) {
     console.error("Failed to parse Gemini grading response", e, response.text);
