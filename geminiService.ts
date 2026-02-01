@@ -39,7 +39,7 @@ export const parseExamFromText = async (text: string): Promise<Exam> => {
   const currentKey = getApiKey();
   
   if (!currentKey) {
-    throw new Error("API Key Missing. Add '?key=YOUR_API_KEY' to the URL or set 'gemini_api_key' in LocalStorage.");
+    throw new Error("API Key not found. Please enter it in the banner at the top of the page.");
   }
 
   const ai = new GoogleGenAI({ apiKey: currentKey });
@@ -124,7 +124,7 @@ export const parseExamFromText = async (text: string): Promise<Exam> => {
 export const gradeExam = async (exam: Exam, answers: Record<string, string>): Promise<GradingResult> => {
   const currentKey = getApiKey();
   if (!currentKey) {
-    throw new Error("API Key Missing. Add '?key=YOUR_API_KEY' to the URL or set 'gemini_api_key' in LocalStorage.");
+    throw new Error("API Key not found. Please enter it in the banner at the top of the page.");
   }
 
   const ai = new GoogleGenAI({ apiKey: currentKey });

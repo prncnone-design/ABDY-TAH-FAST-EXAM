@@ -21,8 +21,6 @@ const App: React.FC = () => {
 
   // Check for API Key on mount
   useEffect(() => {
-    // We can't access getApiKey directly here easily without importing logic, 
-    // but we can check the artifacts it looks for.
     const hasKey = 
       (typeof window !== 'undefined' && (
         localStorage.getItem("gemini_api_key") || 
@@ -121,12 +119,11 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col items-center pb-20">
-      <Header onLogoClick={reset} />
+    <div className="min-h-screen bg-slate-50 flex flex-col items-center pb-20 relative">
       
-      {/* Warning Banner for Vercel/Static Deployments */}
+      {/* Sticky Warning Banner for Vercel/Static Deployments */}
       {apiKeyMissing && (
-        <div className="w-full bg-slate-900 border-b border-slate-800 p-4 text-center text-sm text-white shadow-lg z-50 flex flex-col md:flex-row items-center justify-center gap-4 animate-in slide-in-from-top duration-300">
+        <div className="sticky top-0 w-full bg-slate-900 border-b border-slate-800 p-4 text-center text-sm text-white shadow-lg z-50 flex flex-col md:flex-row items-center justify-center gap-4 animate-in slide-in-from-top duration-300">
            <div className="flex items-center gap-2 text-yellow-400 font-bold shrink-0">
              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
              <span>AI Setup Required</span>
@@ -135,7 +132,7 @@ const App: React.FC = () => {
            <div className="flex items-center gap-2 w-full max-w-lg">
              <input 
                type="password" 
-               placeholder="Paste Gemini API Key here..."
+               placeholder="Paste Free Gemini API Key here..."
                value={manualKey}
                onChange={(e) => setManualKey(e.target.value)}
                className="flex-1 bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-red-500 transition-all"
@@ -160,6 +157,8 @@ const App: React.FC = () => {
            </a>
         </div>
       )}
+
+      <Header onLogoClick={reset} />
 
       <main className="w-full max-w-6xl px-4 mt-8 flex-1">
         {isLoading && (
@@ -187,6 +186,7 @@ const App: React.FC = () => {
             onLoadExam={handleLoadExam}
             onRenameExam={handleRenameExam}
             onDeleteExam={handleDeleteExam}
+            apiKeyMissing={apiKeyMissing}
           />
         ) : (
           <ExamView 

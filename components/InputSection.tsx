@@ -9,6 +9,7 @@ interface InputSectionProps {
   onLoadExam: (exam: Exam) => void;
   onRenameExam: (id: string, title: string) => void;
   onDeleteExam: (id: string) => void;
+  apiKeyMissing: boolean;
 }
 
 const InputSection: React.FC<InputSectionProps> = ({ 
@@ -17,7 +18,8 @@ const InputSection: React.FC<InputSectionProps> = ({
   history, 
   onLoadExam,
   onRenameExam,
-  onDeleteExam
+  onDeleteExam,
+  apiKeyMissing
 }) => {
   const [rawText, setRawText] = useState('');
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -25,7 +27,7 @@ const InputSection: React.FC<InputSectionProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (rawText.trim()) {
+    if (rawText.trim() && !apiKeyMissing) {
       onProcess(rawText);
     }
   };
@@ -90,11 +92,20 @@ const InputSection: React.FC<InputSectionProps> = ({
 
           <button
             type="submit"
-            disabled={disabled || !rawText.trim()}
+            disabled={disabled || !rawText.trim() || apiKeyMissing}
             className="w-full py-4 bg-red-600 text-white rounded-xl font-bold text-lg hover:bg-red-700 active:scale-[0.98] transition-all shadow-lg shadow-red-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:scale-100 flex items-center justify-center gap-3"
           >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
-            INSTANT DEPLOY
+            {apiKeyMissing ? (
+               <>
+                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+                 SETUP API KEY FIRST
+               </>
+            ) : (
+               <>
+                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+                 INSTANT DEPLOY
+               </>
+            )}
           </button>
         </form>
 
